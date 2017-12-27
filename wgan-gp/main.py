@@ -10,7 +10,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 
 ##################################################################
-dataset_name = 'svhn' # [mnist, celeba, svhn]
+dataset_name = 'svhn'  # [mnist, celeba, svhn]
 ##################################################################
 batch_size = 64
 z_dim = 128
@@ -41,6 +41,7 @@ elif dataset_name == 'svhn':
     dataset = load_svhn()
 ##################################################################
 
+
 def get_image(image_path):
     image = Image.open(image_path)
     if image.size != (image_width, image_height):
@@ -50,6 +51,7 @@ def get_image(image_path):
         image = image.crop([j, i, j + face_width, i + face_height])
         image = image.resize([image_width, image_height], Image.BILINEAR)
     return np.array(image.convert('RGB'))
+
 
 def get_batches():
     if dataset_name == 'mnist':
@@ -68,11 +70,13 @@ def get_batches():
 
     return batch_images
 
+
 def leaky_relu(x, leak=0.2, name='leaky_relu'):
     with tf.variable_scope(name):
         f1 = 0.5 * (1 + leak)
         f2 = 0.5 * (1 - leak)
         return f1 * x + f2 * tf.abs(x)
+
 
 def generator(z, channels, training=True):
     with tf.variable_scope("generator", reuse=(not training)):
@@ -83,22 +87,27 @@ def generator(z, channels, training=True):
         bn1 = tf.layers.batch_normalization(deconv1, training=training)
         relu1 = tf.nn.relu(bn1)
 
-        deconv2 = tf.layers.conv2d_transpose(relu1, ngf * 4, 3, strides=2, padding='SAME', kernel_initializer=tf.random_normal_initializer(0, 0.02))
+        deconv2 = tf.layers.conv2d_transpose(relu1, ngf * 4, 3, strides=2, padding='SAME',
+                                             kernel_initializer=tf.random_normal_initializer(0, 0.02))
         bn2 = tf.layers.batch_normalization(deconv2, training=training)
         relu2 = tf.nn.relu(bn2)
 
-        deconv3 = tf.layers.conv2d_transpose(relu2, ngf * 2, 3, strides=2, padding='SAME', kernel_initializer=tf.random_normal_initializer(0, 0.02))
+        deconv3 = tf.layers.conv2d_transpose(relu2, ngf * 2, 3, strides=2, padding='SAME',
+                                             kernel_initializer=tf.random_normal_initializer(0, 0.02))
         bn3 = tf.layers.batch_normalization(deconv3, training=training)
         relu3 = tf.nn.relu(bn3)
 
-        deconv4 = tf.layers.conv2d_transpose(relu3, ngf, 3, strides=2, padding='SAME', kernel_initializer=tf.random_normal_initializer(0, 0.02))
+        deconv4 = tf.layers.conv2d_transpose(relu3, ngf, 3, strides=2, padding='SAME',
+                                             kernel_initializer=tf.random_normal_initializer(0, 0.02))
         bn4 = tf.layers.batch_normalization(deconv4, training=training)
         relu4 = tf.nn.relu(bn4)
 
-        deconv5 = tf.layers.conv2d_transpose(relu4, channels, 3, strides=1, padding='SAME', kernel_initializer=tf.random_normal_initializer(0, 0.02))
+        deconv5 = tf.layers.conv2d_transpose(relu4, channels, 3, strides=1,
+                                             padding='SAME', kernel_initializer=tf.random_normal_initializer(0, 0.02))
         out = tf.nn.tanh(deconv5)
 
         return out
+
 
 def critic(image, reuse=False):
     with tf.variable_scope('critic', reuse=reuse):
@@ -120,11 +129,13 @@ def critic(image, reuse=False):
 
         return logits
 
+
 def model_inputs():
     inputs_real = tf.placeholder(tf.float32, shape=(None, image_width, image_height, channels))
     inputs_z = tf.placeholder(tf.float32, (None, z_dim))
 
     return inputs_real, inputs_z
+
 
 def model_loss(input_real, input_z):
     g = generator(input_z, channels)
@@ -146,6 +157,7 @@ def model_loss(input_real, input_z):
 
     return c_loss, g_loss, gradients
 
+
 def model_opt(c_loss, g_loss):
     c_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='critic')
     g_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
@@ -155,6 +167,7 @@ def model_opt(c_loss, g_loss):
         g_opt = tf.train.AdamOptimizer(learning_rate_g, beta1, beta2).minimize(g_loss, var_list=g_vars)
 
     return c_opt, g_opt
+
 
 def main(mode='train'):
     input_real, input_z = model_inputs()
@@ -198,7 +211,8 @@ def main(mode='train'):
                 sess.run(g_opt, feed_dict={input_real: x, input_z: z})
 
                 if step % 50 == 0:
-                    c_loss_val, g_loss_val, merged_summary = sess.run([c_loss, g_loss, merged_all], feed_dict={input_real: x, input_z: z})
+                    c_loss_val, g_loss_val, merged_summary = sess.run(
+                        [c_loss, g_loss, merged_all], feed_dict={input_real: x, input_z: z})
                     print('step: %d c_loss: %f, g_loss: %f' % (step, c_loss_val, g_loss_val))
                     summary_writer.add_summary(merged_summary, step)
 
@@ -241,6 +255,7 @@ def main(mode='train'):
                     os.makedirs(save_path)
                 plt.savefig(save_path + '%d.png' % idx)
                 print('Saving %d.png' % idx)
+
 
 if __name__ == '__main__':
     main(mode='test')
